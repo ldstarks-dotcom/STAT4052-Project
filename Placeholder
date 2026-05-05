@@ -1,4 +1,40 @@
-cluster_data$cluster <- modFull_1to5$classification #add cluster labels to dataframe
-library(dplyr)
-cluster_data %>% group_by(cluster) %>% summarise(across(c(1:4), mean, na.rm = TRUE))
-#gives transformed cluster means, we'll go back and put things back together
+#train/test split
+set.seed(4052)
+trainidx = sample(1:nrow(df), 0.8 * nrow(df))
+traindf = df[trainidx, ]
+testdf = df[-trainidx, ]
+
+#Checking Assumptions
+model0 = lm( quality ~ . , data = traindf)
+par(mfrow = c(2,2))
+plot(model0)
+library(car)
+vif(model0)
+
+#Random Forest
+library(randomForest)
+#check for missing values
+sum(is.na(df))
+modelrf = randomForest(quality ~ . , data = traindf, ntree = 500, mtry = 3, importance = TRUE)
+modelrf 
+#finding best mtry by minimizing OOB 
+tuned = tuneRF(
+  x        = traindf[, -which(names(traindf) == "quality")],  # predictors
+  y        = traindf$quality,                                # target
+  mtryStart  = floor(sqrt(11)),  # starting value
+  stepFactor = 1.5,             # multiply/divide mtry by this at each step
+  improve    = 0.01,            # min relative improvement to continue
+  ntreeTry   = 300,             # trees per candidate mtry
+  plot       = TRUE             # plots OOB error vs mtry
+)
+best_mtry = tuned[which.min(tuned[, 2]), 1]
+preds = predict(modelrf, newdata = testdf)
+actuals = testdf$quality
+mae = mean(abs(preds - actuals))
+rmse = sqrt(mean((preds- actuals)^2))
+r= cor(preds, actuals)
+r2 = r^2
+cat("MAE:", mae, "|nRMSE:", rmse, "\nR^2:", r2)
+#variable importance plots
+importance(modelrf)
+varImpPlot(modelrf)
