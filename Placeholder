@@ -1,0 +1,4 @@
+cluster_data$cluster <- modFull_1to5$classification #add cluster labels to dataframe
+library(dplyr)
+cluster_data %>% group_by(cluster) %>% summarise(across(c(1:4), mean, na.rm = TRUE))
+#gives transformed cluster means, we'll go back and put things back together
