@@ -1,0 +1,29 @@
+df <- read.csv(file.choose(), sep = ";")
+set.seed(4052)
+trainidx <- sample(1:nrow(df), 0.8 * nrow(df))
+traindf <- df[trainidx, ]
+testdf <- df[-trainidx,]
+# using k-fold cross-validation to select optimal lambda
+library(glmnet)
+#build model matrix for glmnet package:
+x_train <- model.matrix(quality ~ ., data = traindf)[, -1]
+y_train <- traindf$quality
+x_test <- model.matrix(quality ~ ., testdf)[, -1]
+y_test <- testdf$quality
+ cv_model <- cv.glmnet(x, y, alpha = 1) #selecting lambda value
+
+lambda <- cv_model$lambda.1se
+ cv_lasso <- cv.glmnet(
+   x_train, 
+   y_train, 
+   alpha = 1
+ )
+cv_lasso
+cv_lasso$lambda.1se
+final_model <- cv_lasso
+#predict for test set
+pred <- predict(final_model, s = "lambda.1se", newx = x_test)
+rmse <- sqrt(mean((pred = y_test)^2))
+rmse
+#view coefficients:
+coef(final_model, s = "lambda.1se")
