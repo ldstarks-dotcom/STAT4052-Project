@@ -1,0 +1,40 @@
+#PCR:
+library(pls)
+pcr_model <- pcr(
+  quality ~ ., 
+  data = traindf,
+  scale = TRUE,
+  validation = "CV"
+)
+#selecting number of principle components
+validationplot(pcr_model, val.type = "MSEP")
+selectNcomp(pcr_model, method = "onesigma", plot = TRUE)
+
+#perform PCR:
+set.seed(4052)
+pcr_final <- pcr(
+  quality ~ ., 
+  data = traindf,
+  scale = TRUE,
+  ncomp = 9
+)
+pcr_final$loadings
+#test prediction
+pred <- predict(pcr_final, newdata = testdf, ncomp = 9)
+
+#rmse:
+actual <- testdf$quality
+
+rmse <- sqrt(mean((pred - actual)^2))
+rmse
+#trying to plot proportion of variance explained:
+var_exp <- pcr_final$Xvar
+pve <- var_exp / sum(var_exp)
+cum_pve <- cumsum(pve)
+
+plot(pve, type = "b",
+     xlab = "Principal Component",
+     ylab = "Proportion of Variance Explained",
+     main = "PVE by Principal Component")
+
+lines(cum_pve, type = "b")
