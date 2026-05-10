@@ -57,7 +57,7 @@ cv_lasso$lambda.1se
 final_model <- cv_lasso
 #predict for test set
 pred <- predict(final_model, s = "lambda.1se", newx = x_test)
-rmse <- sqrt(mean((pred = y_test)^2))
+rmse <- sqrt(mean((pred - y_test)^2))
 rmse
 #view coefficients:
 coef(final_model, s = "lambda.1se")
